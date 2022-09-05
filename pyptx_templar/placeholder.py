@@ -41,10 +41,9 @@ def interp(cmd, **kwargs):
     try:
         exec(f"_ret={cmd}", None, kwargs)
     except Exception as e:
-        logging.warning("%s Erreur à l'execution de la commande:\n%s\n%s",
-                        context, cmd, e)
-        # relancer l'exception ou juste continuer ?
-        # raise
+        logging.warning("%s Error executing:\n%s\n%s", context, cmd, e)
+        # raise again or just keep going ?
+        # for now just keep going
         return ''
     return kwargs['_ret']
 
@@ -52,11 +51,11 @@ def interp(cmd, **kwargs):
 # https://docs.python.org/3/library/re.html
 def run_replace(run, **kwargs):
     cmd_pat = cmd_pattern()
-    # ne pas utiliser subn car on veut retirer le code avant de l'executer
+    # do not use 'subn' since we want to remove the code before executing
     m = cmd_pat.search(run.text)
     while m is not None:
-        # supprime le code, puis interprète et rajoute le remplacement
-        # évite les problèmes quand le code va dupliquer la slide par exemple
+        # delete code, then interpret and insert where the code used to be
+        # prevents issues when the piece of code duplicates the current slide
         run.text = run.text[:m.start()] + run.text[m.end():]
         val = str(interp(m.group(1), **kwargs))
         run.text = run.text[:m.start()] + val + run.text[m.start():]
@@ -118,8 +117,8 @@ def paragraph_replace(par, _p=None, **kwargs):
         if not runs[idre].text:
             delete_run(runs[idre])
 
-        # supprime le code, puis interprète et rajoute le remplacement
-        # évite les problèmes quand le code va dupliquer la slide par exemple
+        # delete code, then interpret and insert where the code used to be
+        # prevents issues when the piece of code duplicates the current slide
         val = interp(match.group(1), **kwargs, _p=par)
         runs[idrs].text += str(val)
 
@@ -136,9 +135,9 @@ def textframe_replace(tf, _tf=None, **kwargs):
         for par in tf.paragraphs:
             paragraph_replace(par, **kwargs, _tf=tf)
         return
-        # don't replace accross paragraphs
+        # don't replace across paragraphs
 
-    # on insère une image
+    # insert the image
     slide = tf.part.slide
     sh = tf._element.getparent()
     l, t, w, h = sh.x, sh.y, sh.cx, sh.cy
@@ -148,10 +147,10 @@ def textframe_replace(tf, _tf=None, **kwargs):
     slide.shapes.element.remove(sh)
 
     if not file:
-        # ignore les placeholders avec image non définie
+        # ignore placeholders with undefined image
         return
 
-    context = f"[Slide {kwargs['_idx']}] textframe_replace (image '{file}', modificateurs={modifs})"
+    context = f"[Slide {kwargs['_idx']}] textframe_replace (image '{file}', modifiers={modifs})"
 
     try:
         with Image.open(file, mode='r') as im:
@@ -166,15 +165,15 @@ def textframe_replace(tf, _tf=None, **kwargs):
     allm = hm | vm
 
     if not modifs.issubset(allm):
-        logging.info("%s: modificateurs inconnus %s ignorés", context,
+        logging.info("%s: unknown modifiers %s ignored", context,
                      modifs - allm)
 
     if len(modifs.intersection(hm)) > 1:
-        logging.warning("%s: plusieurs modificateurs horizontaux %s", context,
+        logging.warning("%s: several horizontal modifiers %s", context,
                         modifs.intersection(hm))
         return
     if len(modifs.intersection(vm)) > 1:
-        logging.warning("%s: plusieurs modificateurs verticaux %s", context,
+        logging.warning("%s: several vertical modifiers %s", context,
                         modifs.intersection(vm))
         return
 
@@ -191,16 +190,16 @@ def textframe_replace(tf, _tf=None, **kwargs):
         height *= factor
 
     if 'r' in modifs:
-        # aligné à droite
+        # aligned right
         l += w - width
     if 'c' in modifs:
-        # centré horizontalement
+        # centered (horizontal)
         l += (w - width) // 2
     if 'b' in modifs:
-        # aligné en bas
+        # aligned bottom
         t += h - height
     if 'm' in modifs:
-        # centré verticalement
+        # centered (vertically)
         t += (h - height) // 2
 
     slide.shapes.add_picture(file, l, t, width=width, height=height)
@@ -211,9 +210,9 @@ def row_replace(row, _c=None, **kwargs):
         cell_replace(row.cells[_c], **kwargs, _c=_c)
 
 
-def table_replace(table, _c=None, _r=None, **kwargs):
+def table_replace(table, _c=None, _r=None, _table=None, **kwargs):
     for _r in range(len(table.rows)):
-        row_replace(table.rows[_r], **kwargs, _r=_r)
+        row_replace(table.rows[_r], **kwargs, _table=table, _r=_r)
 
 
 def slide_replace(slide, _sl=None, **kwargs):

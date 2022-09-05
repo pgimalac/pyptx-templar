@@ -57,7 +57,7 @@ def fill_placeholders(slide):
             textframe_copy(ph.text_frame, tf)
 
 
-# Ajoute la slide avec le nom donné à la fin de la présentation
+# Add slide with given layout at the end of the presentation
 def append_slide(pres, layout):
     if isinstance(layout, str):
         nl = pres.slide_masters[0].slide_layouts.get_by_name(layout)
@@ -71,7 +71,8 @@ def append_slide(pres, layout):
     return slide
 
 
-# Ecrit le numéro des shapes, pratique pour repérer initialement
+# Writes each shape number inside the shape,
+# convenient when we want to access shapes by their number.
 def etalonnage(prespath, outpath):
     pres = Presentation(prespath)
     for idx, slide in enumerate(pres.slides):
@@ -99,8 +100,10 @@ def find_shape(slide, name):
     return None
 
 
-# duplique la dernière ligne, en particulier les bordures et le texte
-# sont gardés exactement à l'identique
+# duplicate a row of the table, especially borders and text are copied
+# idx is the index of the row we want to copy
+# n is the number of times we want to copy the row
+# to is the index where we want to insert the row
 def table_dup_row(table, idx, n=1, to=None):
     if to is None:
         to = idx
@@ -123,6 +126,12 @@ def table_dup_row(table, idx, n=1, to=None):
     return None
 
 
+# duplicate a column of the table, especially borders and text are copied
+# idx is the index of the column we want to copy
+# n is the number of times we want to copy the column
+# to is the index where we want to insert the column
+# keep_width indicates whether we want to shrink columns to add the new ones
+# so that the total width is the same, or if columns are simply added.
 def table_dup_column(table, idx, n=1, to=None, keep_width=False):
     total_width = table._graphic_frame.width
     colwidth = table.columns[idx].width
@@ -162,15 +171,6 @@ def table_dup_column(table, idx, n=1, to=None, keep_width=False):
     if n == 1:
         return _Column(new_col, table)
     return None
-
-
-# def _get_blank_slide_layout(pres):
-#     layout_items_count = [
-#         len(layout.placeholders) for layout in pres.slide_layouts
-#     ]
-#     min_items = min(layout_items_count)
-#     blank_layout_id = layout_items_count.index(min_items)
-#     return pres.slide_layouts[blank_layout_id]
 
 
 def duplicate_slide(pres, index):

@@ -4,12 +4,11 @@ from pptx.enum.dml import MSO_LINE
 from pptx.util import Pt
 
 
-# La dernière bordure ajoutée est gardée (à l'ajout d'une bordure, l'ancienne
-# est retirée si elle existe).
-# border_color est la couleur de la bordure
-# border_width est la largeur de la bordure
-# border_style est le style de la bordure
-# left, top, right, bot indiquent quelles bordures sont à afficher
+# The former border is kept (when adding a border, the former is removed if it exists)
+# border_color is the color of the border
+# border_width is the width of the border
+# border_style is the style of the border
+# left, top, right, bot indicate which borders are to be set
 def set_cell_borders(cell,
                      border_color=RGB(0, 0, 0),
                      border_width=Pt(1),
@@ -27,14 +26,14 @@ def set_cell_borders(cell,
             continue
         tag = f"a:ln{side}"
 
-        # On retire la bordure précédente (si elle existe).
+        # Remove previous border if it exists
         tcPr.remove_all(tag)
 
-        # les bordures doivent être déclarées dans un certain ordre (L, R, T, B)
-        # sans quoi elles ne sont pas affichées...
+        # Borders have to be declared in a specific order (L, R, T, B)
+        # or they're not displayed
         before = [f"a:ln{s}" for (s, _) in borders[idx + 1:]]
-        # les bordures doivent apparaitre dans le xml avant les style de fond de la cellule
-        # sinon elles ne sont pas affichées...
+        # borders must appear in the xml before the cell style
+        # or they're not displayed
         before += ['a:solidFill', 'a:noFill']
 
         ln = SubElement(tcPr,
@@ -46,10 +45,10 @@ def set_cell_borders(cell,
                         algn='ctr')
 
         solidFill = SubElement(ln, 'a:solidFill')
-        # couleur rgb:
+        # rgb color:
         colorval = "".join(map(lambda v: f"{v:02X}", border_color))
         SubElement(solidFill, 'a:srgbClr', val=colorval)
-        # couleur prédéfinie:
+        # predefined color:
         # SubElement(solidFill, 'a:schemeClr', val="tx1")
 
         SubElement(ln, 'a:prstDash', val=MSO_LINE.to_xml(border_style))
@@ -58,9 +57,9 @@ def set_cell_borders(cell,
         SubElement(ln, 'a:tailEnd', type='none', w='med', len='med')
 
 
-# left, top, right, bot sont les coordonnées des cellules aux bordures
-# outer indique si l'on veut afficher les bordures extérieures
-# inner indique si l'on veut afficher les bordures intérieures
+# left, top, right, bot are the coordinates of the border cells
+# outer indicates whether to set outer borders
+# inner indique whether to set inner borders
 def set_rect_borders(table,
                      left,
                      top,
@@ -93,38 +92,38 @@ def set_rect_borders(table,
     if not outer:
         return
 
-    # PowerPoint a un bug (?), pour les cases intérieures du tableau
-    # il ne regarde que les bordures droite et bas, il faut donc aussi
-    # ajouter les bordures sur les cases extérieures de la selection
+    # PowerPoint has a bug (?), for cells strictly inside an array
+    # only right and bottom borders are looked at, so we need to add
+    # borders on cells outside of the selection
 
     for y in range(top, bot + 1):
-        # bordure droite de la colonne de gauche
+        # right border of the left column
         if left != 0:
             set_cell_borders(table.cell(y, left - 1), **kwargs, right=True)
-        # bordure gauche de la colonne de droite
+        # left border of the right column
         if right != len(table.columns) - 1:
             set_cell_borders(table.cell(y, right + 1), **kwargs, left=True)
 
     for x in range(left, right + 1):
-        # bordure inférieure de la ligne du haut
+        # lower border of upper row
         if top != 0:
             set_cell_borders(table.cell(top - 1, x), **kwargs, bot=True)
-        # bordure supérieure de la ligne du bas
+        # upper border of lower row
         if bot != len(table.rows) - 1:
             set_cell_borders(table.cell(bot + 1, x), **kwargs, top=True)
 
 
-# size est la taille de la police, en général en Pt ou Cm:
+# size is the font size, usually Pt or Cm:
 # https://python-pptx.readthedocs.io/en/latest/api/util.html
-# font est le nom de la font à utiliser (chaine de caractères, sensible à la casse)
-# bold indique si le texte doit être en gras
-# italic indique si le texte doit être en italique
-# font_rgb est la couleur du texte, de type RGBColor, construit soit à partir de 3 entiers
-# soit à partir d'une chaine de caractères représentant 3 hexadécimaux:
+# font is the name of the font (string, case sensitive)
+# bold indicates whether the text is bold
+# italic indicates whether the text is italic
+# font_rgb is the color of the text, of type RGBColor, built either from 3 integers
+# or from a string corresponding to 3 hexadecimal integers:
 # https://python-pptx.readthedocs.io/en/latest/api/dml.html#pptx.dml.color.RGBColor
-# font_brightness est la luminosité de la police, il s'agit d'un flottant entre -1 et 1
-# underline indique si le texte doit être souligné
-# language indique la langue du texte:
+# font_brightness is the brightness of the font, a float between -1 and 1
+# underline indicates whether the text is underlined
+# language indicates the language of the text:
 # https://python-pptx.readthedocs.io/en/latest/api/enum/MsoLanguageId.html
 def font_style(ft,
                size=None,
@@ -153,7 +152,7 @@ def font_style(ft,
         ft.language_id = language
 
 
-# halign indique l'alignement horizontal du texte:
+# halign indicates how the text is horizontally aligned
 # https://python-pptx.readthedocs.io/en/latest/api/enum/PpParagraphAlignment.html
 def text_style(tf, halign=None, **kwargs):
     for paragraph in tf.paragraphs:
@@ -162,12 +161,12 @@ def text_style(tf, halign=None, **kwargs):
             paragraph.alignment = halign
 
 
-# valign indique l'alignement vertical du texte
+# valign indicated how the text is vertically aligned
 # https://python-pptx.readthedocs.io/en/latest/api/enum/MsoVerticalAnchor.html
-# back_rgb est la couleur de fond de la cellule
+# back_rgb is the background color of the cell
 # https://python-pptx.readthedocs.io/en/latest/api/dml.html#pptx.dml.color.RGBColor
-# back_brightness est la luminosité du fond de la cellule, un float entre -1 et 1
-# margin_top, margin_left, margin_bottom, margin_right sont les marges de la cellule
+# back_brightness is the background brightness of the cell, a float between -1 and 1
+# margin_top, margin_left, margin_bottom, margin_right are the margins of the cell
 # https://python-pptx.readthedocs.io/en/latest/api/util.html
 def cell_style(cell,
                valign=None,
