@@ -52,6 +52,11 @@ The pattern is similar to the textual placeholder: `{{img:<modifiers>:<code>}}`.
 
 *If you want to be able to use links, bytes or anything other than a local path, feel free to open a PR.*
 
+The shape which contained the placeholder is removed, whether the image exists or not.
+
+Contrarily to textual placeholders, image placeholders are searched at the TextFrame level (so an image placeholder can be spread across paragraphs), the reason is that the placeholder won't be replaced by anything, it will be deleted as well as its container, and an image be added at the same position, so we don't really care about boundaries nor style.
+
+#### Alignment
 The shape containing the placeholder is used to position the image, in particular the image will be inside the square defined by the text frame. Modifiers are a list of characters which define how the image will be aligned within:
 - `r`: align the image to the right
 - `l`: align the image to the left
@@ -99,7 +104,7 @@ Note that they are only available when it makes sense, eg. `_table`, `_cell`, `_
 - Inside a [Slide](https://python-pptx.readthedocs.io/en/latest/api/slides.html#slide-objects), shapes are interpreted in bottom-up order of the slide 'Selection Pane' list (to open it, select any shape on the slide, open the 'Shape Format' tab and click on the 'Selection Pane' button).
 - Inside a [Table](https://python-pptx.readthedocs.io/en/latest/api/table.html#pptx.table.Table), rows are interpreted from top to bottom.
 - Inside a [table Row](https://python-pptx.readthedocs.io/en/latest/api/table.html#pptx.table._Row), cells are interpreted from left to right.
-- Inside a [TextFrame](https://python-pptx.readthedocs.io/en/latest/api/text.html#pptx.text.text.TextFrame), paragraphs are interpreted in text order.
+- Inside a [TextFrame](https://python-pptx.readthedocs.io/en/latest/api/text.html#pptx.text.text.TextFrame), if there is an image placeholder, the container will be deleted and an image added at the same position, otherwise paragraphs are interpreted in text order.
 - Inside a [Paragraph](https://python-pptx.readthedocs.io/en/latest/api/text.html#pptx.text.text._Paragraph), runs are first interpreted separately in text order, and then code is searched across runs (also in text order). This is the only situation where code can be interpreted in a non-intuitive way. It also means that if you have runs with the following content `{{1+`, `{{1+1}}` and `+1}}`, then it will be interpreted correctly (contrary to what is said in the [nested code](#nestedcode) section). However it's kind of delicate to make sure that PowerPoint puts some text in a single run, so you should avoid betting on that.
 - Inside a [Run](https://python-pptx.readthedocs.io/en/latest/api/text.html#pptx.text.text._Run), code is interpreted in text order.
 
@@ -111,3 +116,6 @@ Various other functions are provided, mostly because they were used at some poin
 [copy.py](./pyptx_templar/copy.py) contains functions to copy the style and content from an element to another.
 
 [presmanager.py](./pyptx_templar/presmanager.py) contains functions to delete, move and duplicate some elements of a presentation.
+
+### Disclaimer
+**Everything can fail, no guarantees are provided and using exec is very unsafe if you don't know what you are executing.**

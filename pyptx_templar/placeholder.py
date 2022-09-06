@@ -1,3 +1,7 @@
+"""
+Everything related to placeholders and text or image replacement.
+"""
+
 import logging
 import re
 
@@ -5,50 +9,93 @@ from PIL import Image
 
 from .presmanager import delete_run
 
+# Define the characters marking the opening of a placeholder.
 CMD_P1_ = CMD_P2_ = '{'
+
+# Define the characters marking the closing of a placeholder.
 CMD_S1_ = CMD_S2_ = '}'
 
+# Characters which are replaced before executing the code.
+# By default, the only replaced characters are ‘ and ’ which are replaced by a straight single quote.
 REPLACE_CHARS_ = {'‘': '\'', '’': '\''}
 
 
 def cmd_p():
+    """
+    Returns the opening string of a placeholder.
+    """
     return f"{CMD_P1_}{CMD_P2_}"
 
 
 def cmd_s():
+    """
+    Returns the closing string of a placeholder.
+    """
     return f"{CMD_S1_}{CMD_S2_}"
 
 
 def cmd_pattern():
+    """
+    Returns the (compiled) pattern corresponding to a text placeholder.
+    """
     return re.compile(f"{cmd_p()}(.*?){cmd_s()}")
 
 
 def img_pattern():
+    """
+    Returns the (compiled) pattern corresponding to an image placeholder.
+    """
     return f"{cmd_p()}img:(.*?):(.*?){cmd_s()}"
 
 
-# https://docs.python.org/3/library/functions.html#exec
 def interp(cmd, **kwargs):
+    """
+    Given python code extracted from a placeholder, interpret it with kwargs
+    as environment, and return the value fetched from the code as a string.
+
+    Characters in cmd are replaced if they appear in REPLACE_CHARS_, then
+    the command is executed with
+    ```py
+    exec(f"_ret={cmd}", None, kwargs)
+    ```
+    and lastly the value of `_ret` is fetched and returned as a string.
+
+    In case of error, an empty string is returned.
+
+    Using exec is of course very unsafe, but we assume the users knows what
+    he is executing, or else that he at least knows the risks.
+    """
+
     if '_r' in kwargs and '_c' in kwargs:
         context = f"[Slide {kwargs['_idx']}, cell at row {kwargs['_r']} and col {kwargs['_c']}]"
     else:
         context = f"[Slide {kwargs['_idx']}]"
 
-    logging.debug("%s Interpreting command '%s'", context, cmd)
-    for p, t in REPLACE_CHARS_.items():
-        cmd = cmd.replace(p, t)
+    logging.getLogger(__name__).debug("%s Interpreting command '%s'", context,
+                                      cmd)
+    for idx, char in enumerate(cmd):
+        if char in REPLACE_CHARS_:
+            cmd[idx] = REPLACE_CHARS_[char]
     try:
         exec(f"_ret={cmd}", None, kwargs)
     except Exception as e:
-        logging.warning("%s Error executing:\n%s\n%s", context, cmd, e)
+        logging.getLogger(__name__).warning("%s Error executing:\n%s\n%s",
+                                            context, cmd, e)
         # raise again or just keep going ?
         # for now just keep going
         return ''
     return kwargs['_ret']
 
 
-# https://docs.python.org/3/library/re.html
 def run_replace(run, **kwargs):
+    """
+    Find and replace placeholders inside a run, with the given local environment.
+
+    Placeholders are replaced in order.
+
+    Placeholders are removed before executing the code.
+    """
+
     cmd_pat = cmd_pattern()
     # do not use 'subn' since we want to remove the code before executing
     m = cmd_pat.search(run.text)
@@ -63,10 +110,30 @@ def run_replace(run, **kwargs):
 
 
 def cell_replace(cell, _cell=None, **kwargs):
+    """
+    Find and replace placeholders inside a cell,
+    with the given local environment.
+
+    Adds the cell to the environment, as `_cell`.
+    """
     textframe_replace(cell.text_frame, **kwargs, _cell=cell)
 
 
 def paragraph_replace(par, _p=None, **kwargs):
+    """
+    Find and replace placeholders inside a paragraph,
+    with the given local environment.
+
+    Adds the paragraph to the environment, as `_p`.
+
+    The order in which placeholders are interpreted is first by considering
+    runs independently, in text order, and then checking whether the paragraph
+    has placeholders over run boundaries.
+
+    Placeholders are fully removed before being interpreted, and the result of
+    the execution is inserted in the first run.
+    """
+
     for run in par.runs:
         run_replace(run, **kwargs, _p=par)
 
@@ -127,6 +194,18 @@ def paragraph_replace(par, _p=None, **kwargs):
 
 
 def textframe_replace(tf, _tf=None, **kwargs):
+    """
+    Find and replace placeholders inside a TextFrame,
+    with the given local environment.
+
+    Adds the TextFrame to the environment, as `_tf`.
+
+    If the TextFrame contains an image placeholder, the container is removed
+    and the image added at its position. Otherwise, paragraphs are interpreted
+    in text order separately (textual placeholders are not searched across
+    paragraph boundaries).
+    """
+
     # match image
     m = re.search(img_pattern(), tf.text)
 
@@ -156,7 +235,7 @@ def textframe_replace(tf, _tf=None, **kwargs):
             width = im.width
             height = im.height
     except (FileNotFoundError, PermissionError, OSError):
-        logging.exception("%s: ", context)
+        logging.getLogger(__name__).exception("%s: ", context)
         return
 
     hm = {'r', 'l', 'c'}
@@ -164,16 +243,18 @@ def textframe_replace(tf, _tf=None, **kwargs):
     allm = hm | vm
 
     if not modifs.issubset(allm):
-        logging.info("%s: unknown modifiers %s ignored", context,
-                     modifs - allm)
+        logging.getLogger(__name__).info("%s: unknown modifiers %s ignored",
+                                         context, modifs - allm)
 
     if len(modifs.intersection(hm)) > 1:
-        logging.warning("%s: several horizontal modifiers %s", context,
-                        modifs.intersection(hm))
+        logging.getLogger(__name__).warning(
+            "%s: several horizontal modifiers %s", context,
+            modifs.intersection(hm))
         return
     if len(modifs.intersection(vm)) > 1:
-        logging.warning("%s: several vertical modifiers %s", context,
-                        modifs.intersection(vm))
+        logging.getLogger(__name__).warning(
+            "%s: several vertical modifiers %s", context,
+            modifs.intersection(vm))
         return
 
     factor = min(w / width, h / height)
@@ -205,16 +286,51 @@ def textframe_replace(tf, _tf=None, **kwargs):
 
 
 def row_replace(row, _c=None, **kwargs):
+    """
+    Find and replace placeholders inside a table row,
+    with the given local environment.
+
+    Adds the table column index to the environment, as `_c`.
+
+    Cells are interpreted from left to right.
+    """
+
+    # I did not use enumerate to avoid issues if interpreting changes the number of rows
+    # but not sure it's much better using range(len(...))
     for _c in range(len(row.cells)):
         cell_replace(row.cells[_c], **kwargs, _c=_c)
 
 
 def table_replace(table, _r=None, _table=None, **kwargs):
+    """
+    Find and replace placeholders inside a table,
+    with the given local environment.
+
+    Adds the table and row index to the environment, as `_table` and `r`.
+
+    Rows are interpreted from top to bottom.
+    """
+
+    # I did not use enumerate to avoid issues if interpreting changes the number of rows
+    # but not sure it's much better using range(len(...))
     for _r in range(len(table.rows)):
         row_replace(table.rows[_r], **kwargs, _table=table, _r=_r)
 
 
 def slide_replace(slide, _sl=None, **kwargs):
+    """
+    Find and replace placeholders inside a slide,
+    with the given local environment.
+
+    Adds the slide in the environment, as `_sl`.
+
+    Shapes are interpreted from in the order defined in the slide, which
+    can be seen and edited by selecting any shape on the slide, opening the
+    "Shape Format" tab and clicking on "Selection Pane" (bottom-up).
+
+    Only shape TextFrames and Tables are interpreted.
+    """
+
     for sh in slide.shapes:
         if sh.has_text_frame:
             textframe_replace(sh.text_frame, **kwargs, _sl=slide)
@@ -223,5 +339,15 @@ def slide_replace(slide, _sl=None, **kwargs):
 
 
 def pres_replace(pres, _idx=None, _pres=None, **kwargs):
+    """
+    Find and replace placeholders inside the presentation,
+    with the given local environment.
+
+    Adds the Presentation and slide index in the environment,
+    as `_pres` and `_idx`.
+
+    Slides are interpreted in ascending order.
+    """
+
     for idx, slide in enumerate(pres.slides):
         slide_replace(slide, **kwargs, _pres=pres, _idx=idx)

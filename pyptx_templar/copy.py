@@ -1,3 +1,13 @@
+"""
+Contains functions to copy styles and content from equivalent elements:
+- TextFrame
+- Paragraph
+- Run
+- Font
+- Fill
+- Color
+"""
+
 import logging
 import sys
 
@@ -14,7 +24,8 @@ def color_copy(cfrom, cto):
         elif cfrom.type == MSO_COLOR_TYPE.SCHEME:
             cto.theme_color = cfrom.theme_color
         else:
-            logging.warning("font_copy: unknown color type '%s'", cfrom.type)
+            logging.getLogger(__name__).warning(
+                "font_copy: unknown color type '%s'", cfrom.type)
         cto.brightness = cfrom.brightness
 
 
@@ -39,7 +50,8 @@ def fill_copy(ffrom, fto):
     elif ffrom.type == MSO_FILL.TEXTURED:
         fto.textured()
     else:
-        logging.warning("font_copy: unknown fill type '%s'", ffrom.type)
+        logging.getLogger(__name__).warning(
+            "font_copy: unknown fill type '%s'", ffrom.type)
     color_copy(ffrom.fore_color, fto.fore_color)
 
 
@@ -84,8 +96,8 @@ def paragraph_copy(pfrom, pto):
             # contains paragraph style information, copied by paragraph_copy
             # CT_TextCharacterProperties is at the beginning of runs which have a different style from the paragraph,
             # and contains information about this style, copied by run_copy
-            logging.warning("paragraph_copy: element non prévu de type '%s'",
-                            type(e))
+            logging.getLogger(__name__).warning(
+                "paragraph_copy: element non prévu de type '%s'", type(e))
 
     # we have to copy after creating the runs or the style is not completely kept
     # (add line_break breaks the level ?)

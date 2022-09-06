@@ -1,14 +1,18 @@
+"""
+Contains functions to easily edit the style of an element.
+- Cell borders
+- Table borders
+- Font
+- Paragraph
+- TextFrame
+"""
+
 from .xml import SubElement
 from pptx.dml.color import RGBColor as RGB
 from pptx.enum.dml import MSO_LINE
 from pptx.util import Pt
 
 
-# The former border is kept (when adding a border, the former is removed if it exists)
-# border_color is the color of the border
-# border_width is the width of the border
-# border_style is the style of the border
-# left, top, right, bot indicate which borders are to be set
 def set_cell_borders(cell,
                      border_color=RGB(0, 0, 0),
                      border_width=Pt(1),
@@ -17,6 +21,14 @@ def set_cell_borders(cell,
                      top=False,
                      right=False,
                      bot=False):
+    """
+    The former border is kept (when adding a border, the former is removed if it exists)
+    - border_color is the color of the border
+    - border_width is the width of the border
+    - border_style is the style of the border
+    - left, top, right, bot indicate which borders are to be set
+    """
+
     tc = cell._tc
     tcPr = tc.get_or_add_tcPr()
 
@@ -57,9 +69,6 @@ def set_cell_borders(cell,
         SubElement(ln, 'a:tailEnd', type='none', w='med', len='med')
 
 
-# left, top, right, bot are the coordinates of the border cells
-# outer indicates whether to set outer borders
-# inner indique whether to set inner borders
 def set_rect_borders(table,
                      left,
                      top,
@@ -68,6 +77,13 @@ def set_rect_borders(table,
                      outer=False,
                      inner=False,
                      **kwargs):
+    """
+    - left, top, right, bot are the coordinates of the border cells
+    - outer indicates whether to set outer borders
+    - inner indicates whether to set inner borders
+    - kwargs are propagated to the Cell borders
+    """
+
     assert left >= 0
     assert top >= 0
     assert right < len(table.columns)
@@ -113,18 +129,6 @@ def set_rect_borders(table,
             set_cell_borders(table.cell(bot + 1, x), **kwargs, top=True)
 
 
-# size is the font size, usually Pt or Cm:
-# https://python-pptx.readthedocs.io/en/latest/api/util.html
-# font is the name of the font (string, case sensitive)
-# bold indicates whether the text is bold
-# italic indicates whether the text is italic
-# font_rgb is the color of the text, of type RGBColor, built either from 3 integers
-# or from a string corresponding to 3 hexadecimal integers:
-# https://python-pptx.readthedocs.io/en/latest/api/dml.html#pptx.dml.color.RGBColor
-# font_brightness is the brightness of the font, a float between -1 and 1
-# underline indicates whether the text is underlined
-# language indicates the language of the text:
-# https://python-pptx.readthedocs.io/en/latest/api/enum/MsoLanguageId.html
 def font_style(ft,
                size=None,
                font=None,
@@ -134,6 +138,21 @@ def font_style(ft,
                font_brightness=None,
                underline=None,
                language=None):
+    """
+    - size is the font size, usually Pt or Cm:
+    https://python-pptx.readthedocs.io/en/latest/api/util.html
+    - font is the name of the font (string, case sensitive)
+    - bold indicates whether the text is bold
+    - italic indicates whether the text is italic
+    - font_rgb is the color of the text, of type RGBColor, built either from 3 integers
+    or from a string corresponding to 3 hexadecimal integers:
+    https://python-pptx.readthedocs.io/en/latest/api/dml.html#pptx.dml.color.RGBColor
+    - font_brightness is the brightness of the font, a float between -1 and 1
+    - underline indicates whether the text is underlined
+    - language indicates the language of the text:
+    https://python-pptx.readthedocs.io/en/latest/api/enum/MsoLanguageId.html
+    """
+
     if size is not None:
         ft.size = size
     if font is not None:
@@ -152,22 +171,19 @@ def font_style(ft,
         ft.language_id = language
 
 
-# halign indicates how the text is horizontally aligned
-# https://python-pptx.readthedocs.io/en/latest/api/enum/PpParagraphAlignment.html
 def text_style(tf, halign=None, **kwargs):
+    """
+    - halign indicates how the text is horizontally aligned
+    https://python-pptx.readthedocs.io/en/latest/api/enum/PpParagraphAlignment.html
+    - kwargs are propagated to the Paragraph
+    """
+
     for paragraph in tf.paragraphs:
         font_style(paragraph.font, **kwargs)
         if halign is not None:
             paragraph.alignment = halign
 
 
-# valign indicated how the text is vertically aligned
-# https://python-pptx.readthedocs.io/en/latest/api/enum/MsoVerticalAnchor.html
-# back_rgb is the background color of the cell
-# https://python-pptx.readthedocs.io/en/latest/api/dml.html#pptx.dml.color.RGBColor
-# back_brightness is the background brightness of the cell, a float between -1 and 1
-# margin_top, margin_left, margin_bottom, margin_right are the margins of the cell
-# https://python-pptx.readthedocs.io/en/latest/api/util.html
 def cell_style(cell,
                valign=None,
                back_rgb=None,
@@ -177,6 +193,17 @@ def cell_style(cell,
                margin_left=None,
                margin_right=None,
                **kwargs):
+    """
+    - valign indicated how the text is vertically aligned
+    https://python-pptx.readthedocs.io/en/latest/api/enum/MsoVerticalAnchor.html
+    - back_rgb is the background color of the cell
+    https://python-pptx.readthedocs.io/en/latest/api/dml.html#pptx.dml.color.RGBColor
+    - back_brightness is the background brightness of the cell, a float between -1 and 1
+    - margin_top, margin_left, margin_bottom, margin_right are the margins of the cell
+    https://python-pptx.readthedocs.io/en/latest/api/util.html
+    - kwargs are propagated to the TextFrame
+    """
+
     if margin_bottom is not None:
         cell.margin_bottom = margin_bottom
     if margin_top is not None:
@@ -201,6 +228,11 @@ def cell_style(cell,
 
 
 def paragraph_append(paragraph, txt, **kwargs):
+    """
+    Adds a run to the paragraph, with the given text.
+
+    - kwargs are propagated to the Run.
+    """
     run = paragraph.add_run()
     run.text = txt
     font_style(run.font, **kwargs)
