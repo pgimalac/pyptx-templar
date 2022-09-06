@@ -1,6 +1,5 @@
 import logging
 import re
-import sys
 
 from PIL import Image
 
@@ -63,7 +62,7 @@ def run_replace(run, **kwargs):
         m = cmd_pat.search(run.text)
 
 
-def cell_replace(cell, **kwargs):
+def cell_replace(cell, _cell=None, **kwargs):
     textframe_replace(cell.text_frame, **kwargs, _cell=cell)
 
 
@@ -210,7 +209,7 @@ def row_replace(row, _c=None, **kwargs):
         cell_replace(row.cells[_c], **kwargs, _c=_c)
 
 
-def table_replace(table, _c=None, _r=None, _table=None, **kwargs):
+def table_replace(table, _r=None, _table=None, **kwargs):
     for _r in range(len(table.rows)):
         row_replace(table.rows[_r], **kwargs, _table=table, _r=_r)
 

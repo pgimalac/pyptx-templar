@@ -11,6 +11,7 @@ evaluating inside a table)
 We also use the fact that commands are replaced in the order of the elements
 in the slide, which can be seen (and changed) by selecting any element of the
 slide, opening the "Layout" tab and clicking on the "Selection Pane" button.
+The order is bottom-up.
 
 Beware that if the table was before the text field in this list, then the
 commands in the table would have been interpreted and only then the (already
