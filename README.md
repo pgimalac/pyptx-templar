@@ -101,7 +101,7 @@ Note that they are only available when it makes sense, eg. `_table`, `_cell`, `_
 
 #### Interpretation order
 - Inside a [Presentation](https://python-pptx.readthedocs.io/en/latest/api/presentation.html#pptx.presentation.Presentation), slides are interpreted in ascending order.
-- Inside a [Slide](https://python-pptx.readthedocs.io/en/latest/api/slides.html#slide-objects), shapes are interpreted in bottom-up order of the slide 'Selection Pane' list (to open it, select any shape on the slide, open the 'Shape Format' tab and click on the 'Selection Pane' button).
+- Inside a [Slide](https://python-pptx.readthedocs.io/en/latest/api/slides.html#slide-objects), shapes are interpreted in bottom-up order of the slide 'Selection Pane' list (to open it, click on the `Select` button in the `Home` tab and then `Selection Pane`).
 - Inside a [Table](https://python-pptx.readthedocs.io/en/latest/api/table.html#pptx.table.Table), rows are interpreted from top to bottom.
 - Inside a [table Row](https://python-pptx.readthedocs.io/en/latest/api/table.html#pptx.table._Row), cells are interpreted from left to right.
 - Inside a [TextFrame](https://python-pptx.readthedocs.io/en/latest/api/text.html#pptx.text.text.TextFrame), if there is an image placeholder, the container will be deleted and an image added at the same position, otherwise paragraphs are interpreted in text order.

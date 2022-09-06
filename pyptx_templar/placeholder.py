@@ -325,8 +325,8 @@ def slide_replace(slide, _sl=None, **kwargs):
     Adds the slide in the environment, as `_sl`.
 
     Shapes are interpreted from in the order defined in the slide, which
-    can be seen and edited by selecting any shape on the slide, opening the
-    "Shape Format" tab and clicking on "Selection Pane" (bottom-up).
+    can be seen and edited by clicking on the `Select` button in the `Home`
+    tab and then `Selection Pane` (bottom-up).
 
     Only shape TextFrames and Tables are interpreted.
     """
