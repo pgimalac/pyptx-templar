@@ -77,9 +77,10 @@ def interp(cmd, **kwargs):
         cmd = cmd.replace(cfrom, cto)
     try:
         exec(f"_ret={cmd}", None, kwargs)
-    except Exception as e:
+    except:
         logging.getLogger(__name__).warning("%s Error executing:\n%s\n%s",
-                                            context, cmd, e)
+                                            context, cmd,
+                                            traceback.format_exc())
         # raise again or just keep going ?
         # for now just keep going
         return ''
