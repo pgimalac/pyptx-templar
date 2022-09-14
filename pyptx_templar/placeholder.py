@@ -73,9 +73,8 @@ def interp(cmd, **kwargs):
 
     logging.getLogger(__name__).debug("%s Interpreting command '%s'", context,
                                       cmd)
-    for idx, char in enumerate(cmd):
-        if char in REPLACE_CHARS_:
-            cmd[idx] = REPLACE_CHARS_[char]
+    for cfrom, cto in REPLACE_CHARS_.items():
+        cmd = cmd.replace(cfrom, cto)
     try:
         exec(f"_ret={cmd}", None, kwargs)
     except Exception as e:
