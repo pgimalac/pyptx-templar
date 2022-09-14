@@ -4,6 +4,7 @@ Everything related to placeholders and text or image replacement.
 
 import logging
 import re
+import traceback
 
 from PIL import Image
 
