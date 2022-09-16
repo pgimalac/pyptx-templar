@@ -22,7 +22,8 @@ classifiers = [
 ]
 keywords = ["template", "PowerPoint", "ppt", "pptx", "office"]
 dependencies = [
-    "python-pptx >= 0.6.21",
+    # https://github.com/scanny/python-pptx/issues/754
+    "python-pptx == 0.6.18",
     "Pillow"
 ]
 requires-python = ">=3.6"
