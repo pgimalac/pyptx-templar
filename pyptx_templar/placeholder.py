@@ -350,5 +350,9 @@ def pres_replace(pres, _idx=None, _pres=None, **kwargs):
     Slides are interpreted in ascending order.
     """
 
-    for idx, slide in enumerate(pres.slides):
+    idx = 0
+    # len(pres.slides) can change during execution
+    while idx < len(pres.slides):
+        slide = pres.slides[idx]
         slide_replace(slide, **kwargs, _pres=pres, _idx=idx)
+        idx += 1
