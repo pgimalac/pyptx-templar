@@ -67,13 +67,14 @@ def interp(cmd, **kwargs):
     he is executing, or else that he at least knows the risks.
     """
 
-    if '_r' in kwargs and '_c' in kwargs:
-        context = f"[Slide {kwargs['_idx']}, cell at row {kwargs['_r']} and col {kwargs['_c']}]"
-    else:
-        context = f"[Slide {kwargs['_idx']}]"
+    context = ""
+    if '_idx' in kwargs:
+        context = f"Slide {kwargs['_idx']}"
+        if '_r' in kwargs and '_c' in kwargs:
+            context = f"{context}, cell at row {kwargs['_r']} and col {kwargs['_c']}"
 
-    logging.getLogger(__name__).debug("%s Interpreting command '%s'", context,
-                                      cmd)
+    logging.getLogger(__name__).debug("[%s] Interpreting command '%s'",
+                                      context, cmd)
     for cfrom, cto in REPLACE_CHARS_.items():
         cmd = cmd.replace(cfrom, cto)
     try:
@@ -229,7 +230,11 @@ def textframe_replace(tf, _tf=None, **kwargs):
         # ignore placeholders with undefined image
         return
 
-    context = f"[Slide {kwargs['_idx']}] textframe_replace (image '{file}', modifiers={modifs})"
+    if '_idx' in kwargs:
+        context = f"Slide {kwargs['_idx']}"
+    else:
+        context = ""
+    context = f"[{context}] textframe_replace (image '{file}', modifiers={modifs})"
 
     try:
         with Image.open(file, mode='r') as im:
