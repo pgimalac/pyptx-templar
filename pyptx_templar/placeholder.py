@@ -9,6 +9,7 @@ import traceback
 from PIL import Image
 
 from .presmanager import delete_run
+from pptx.shapes.shapetree import GroupShape
 
 # Define the characters marking the opening of a placeholder.
 CMD_P1_ = CMD_P2_ = '{'
@@ -338,12 +339,20 @@ def slide_replace(slide, _sl=None, **kwargs):
     """
 
     for sh in slide.shapes:
-        if sh.has_text_frame:
-            textframe_replace(sh.text_frame, **kwargs, _sl=slide)
-        if sh.has_table:
-            table_replace(sh.table, **kwargs, _sl=slide)
-
-
+        # If it is a group shape, it might have child shapes which might contain text. Ideally this should be made recursive (GroupShape in Groupshape etc.).
+        # For now, let's go one level deeper.
+        if isinstance(sh, GroupShape):
+            for child_shape in sh.shapes:
+                shape_replace(child_shape, slide, **kwargs)
+        #replace either way if main shape also has text frames or if it isn't a shild shape.
+        shape_replace(sh, slide, **kwargs)
+            
+def shape_replace(shape, slide=None, **kwargs):
+    if shape.has_text_frame:
+        textframe_replace(shape.text_frame, **kwargs, _sl=slide)
+    if shape.has_table:
+        table_replace(shape.table, **kwargs, _sl=slide)
+        
 def pres_replace(pres, _idx=None, _pres=None, **kwargs):
     """
     Find and replace placeholders inside the presentation,
