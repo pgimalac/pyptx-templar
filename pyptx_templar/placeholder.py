@@ -358,6 +358,10 @@ def pres_replace(pres, _idx=None, _pres=None, **kwargs):
     idx = 0
     # len(pres.slides) can change during execution
     while idx < len(pres.slides):
+        logging.getLogger(__name__).debug("start replacing slide %d out of %d",
+                                          idx, len(pres.slides))
         slide = pres.slides[idx]
         slide_replace(slide, **kwargs, _pres=pres, _idx=idx)
+        logging.getLogger(__name__).debug("done replacing slide %d out of %d",
+                                          idx, len(pres.slides))
         idx += 1
